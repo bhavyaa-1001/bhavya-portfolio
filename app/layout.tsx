@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Syne } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -68,6 +69,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${syne.variable}`}>
       <body className="bg-[#0a0a0a] text-white antialiased relative min-h-screen">
         {children}
+        <Analytics />
       </body>
     </html>
   );
