@@ -47,14 +47,11 @@ export default function About() {
   const dragStartAngleRef = useRef(0);
   const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Manual toggle override
-  const manualOverrideRef = useRef(false);
-
   // Detail modal state
   const [selectedCategory, setSelectedCategory] = useState<SkillCategory | null>(null);
 
   const NUM_CARDS = skillCategories.length; // 6
-  const ORBIT_RADIUS = 320; // 3D cylinder radius in px
+  const ORBIT_RADIUS = 350; // 3D cylinder radius in px
 
   // Grid Dimensions
   const GRID_CARD_WIDTH = 365;
@@ -155,43 +152,6 @@ export default function About() {
   }, [isMobile, shouldReduceMotion, viewMode, hoveredCardIndex, focusedCardIndex]);
 
   // ──────────────────────────────────────────────────────────
-  // Smooth scroll trigger between Orbit and Grid views
-  // ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (isMobile || shouldReduceMotion) return;
-
-    const handleScroll = () => {
-      const section = skillsSectionRef.current;
-      if (!section) return;
-
-      const rect = section.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-
-      // Reset manual click override if scrolled far away from section
-      if (manualOverrideRef.current) {
-        if (rect.bottom < -100 || rect.top > windowHeight + 100) {
-          manualOverrideRef.current = false;
-        }
-        return;
-      }
-
-      // Stage center is rect.top + 480
-      const stageCenter = rect.top + 480;
-
-      // Morph to Grid when scrolled to upper-center of screen; return to Orbit when higher up
-      if (stageCenter <= windowHeight * 0.48 && rect.bottom >= windowHeight * 0.15) {
-        setViewMode("grid");
-      } else if (stageCenter > windowHeight * 0.65) {
-        setViewMode("orbit");
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isMobile, shouldReduceMotion]);
-
-  // ──────────────────────────────────────────────────────────
   // Mouse / Pointer Drag Support (Horizontal rotation mapping)
   // ──────────────────────────────────────────────────────────
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -285,7 +245,7 @@ export default function About() {
   });
 
   return (
-    <section id="about" className="relative py-24 md:py-32 overflow-hidden">
+    <section id="about" className="relative py-14 md:py-18 overflow-hidden">
       {/* Subtle web-pattern overlay */}
       <div className="absolute inset-0 web-pattern pointer-events-none" />
 
@@ -297,7 +257,7 @@ export default function About() {
         />
 
         {/* ═══════════════ Bio & Principles Grid ═══════════════ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start mt-10 md:mt-14 mb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start mt-8 md:mt-12 mb-12">
           {/* Main Editorial Statement */}
           <motion.div
             initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
@@ -383,7 +343,7 @@ export default function About() {
         </div>
 
         {/* ═══════════════ Infinite Scrolling Ticker ═══════════════ */}
-        <div className="relative py-6 my-10 border-y border-white/[0.06] overflow-hidden">
+        <div className="relative py-4 my-6 border-y border-white/[0.06] overflow-hidden">
           <div className="flex w-max gap-8 animate-marquee">
             {[...allSkillsFlat, ...allSkillsFlat].map((skill, index) => (
               <span key={`${skill}-${index}`} className="inline-flex items-center gap-3 text-sm md:text-base font-mono uppercase tracking-widest text-white/25 hover:text-[#dc2626] transition-colors">
@@ -395,9 +355,9 @@ export default function About() {
         </div>
 
         {/* ═══════════════ Categorized Stack ═══════════════ */}
-        <div className="mt-14 pt-4" ref={skillsSectionRef}>
+        <div className="mt-8 pt-2" ref={skillsSectionRef}>
           {/* Header with Title & Mode Switcher */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-3 border-b border-white/[0.06]">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-2 border-b border-white/[0.06]">
             <div>
               <span className="font-mono text-xs text-[#dc2626] uppercase tracking-widest block mb-1">Interactive Arsenal</span>
               <h3
@@ -414,7 +374,6 @@ export default function About() {
                 <div className="flex items-center gap-1.5 p-1 rounded-xl glass border border-white/10">
                   <button
                     onClick={() => {
-                      manualOverrideRef.current = true;
                       setFocusedCardIndex(null);
                       setViewMode("orbit");
                     }}
@@ -429,7 +388,6 @@ export default function About() {
                   </button>
                   <button
                     onClick={() => {
-                      manualOverrideRef.current = true;
                       setFocusedCardIndex(null);
                       setViewMode("grid");
                     }}
@@ -476,9 +434,11 @@ export default function About() {
                   }, 1500);
                 }
               }}
-              className={`relative w-full flex items-center justify-center min-h-[760px] md:min-h-[820px] py-10 select-none ${
-                viewMode === "orbit" ? "cursor-grab active:cursor-grabbing" : ""
-              }`}
+              className={`relative w-full flex items-center justify-center ${
+                viewMode === "orbit"
+                  ? "min-h-[480px] md:min-h-[500px] py-2 cursor-grab active:cursor-grabbing"
+                  : "min-h-[560px] md:min-h-[580px] py-4"
+              } select-none`}
               style={{
                 perspective: "1200px",
                 transformStyle: "preserve-3d",
@@ -560,10 +520,10 @@ export default function About() {
                       : isOtherFocused
                       ? 0.72
                       : isHovered
-                      ? 1.1
+                      ? 1.12
                       : isOtherHovered
-                      ? 0.85
-                      : 0.82 + 0.23 * depth;
+                      ? 0.86
+                      : 0.85 + 0.22 * depth;
 
                     const cardOpacity = isFocused
                       ? 1.0
@@ -627,15 +587,15 @@ export default function About() {
                             }}
                             className={`rounded-2xl border transition-all duration-300 flex flex-col justify-between ${
                               isFocused
-                                ? "w-[440px] sm:w-[480px] p-6 sm:p-7 bg-[#0f0f18] border-[#dc2626]/70 shadow-[0_0_50px_rgba(220,38,38,0.45)] cursor-default"
+                                ? "w-[460px] sm:w-[500px] p-6 sm:p-7 bg-[#0f0f18] border-[#dc2626]/70 shadow-[0_0_50px_rgba(220,38,38,0.45)] cursor-default"
                                 : isHovered
-                                ? "w-[290px] p-5 bg-[#0e0e16] border-[#dc2626]/50 shadow-[0_0_35px_rgba(220,38,38,0.3)] cursor-pointer"
-                                : "w-[290px] p-5 bg-[#0c0c12] border-white/[0.1] shadow-[0_15px_35px_rgba(0,0,0,0.8)] cursor-pointer"
+                                ? "w-[330px] sm:w-[345px] p-5 sm:p-5.5 bg-[#0e0e16] border-[#dc2626]/50 shadow-[0_0_35px_rgba(220,38,38,0.3)] cursor-pointer"
+                                : "w-[330px] sm:w-[345px] p-5 sm:p-5.5 bg-[#0c0c12] border-white/[0.1] shadow-[0_15px_35px_rgba(0,0,0,0.8)] cursor-pointer"
                             }`}
                             style={{
                               position: "absolute",
-                              top: isFocused ? -160 : -105,
-                              left: isFocused ? -220 : -145,
+                              top: isFocused ? -170 : -115,
+                              left: isFocused ? -240 : -172,
                               filter:
                                 hoveredCardIndex === i
                                   ? "brightness(1.2)"
@@ -651,7 +611,7 @@ export default function About() {
                                     {getCategoryIcon(group.category)}
                                   </div>
                                   <div>
-                                    <h4 className="text-base font-extrabold text-white tracking-wide">
+                                    <h4 className="text-base sm:text-lg font-extrabold text-white tracking-wide">
                                       {group.category}
                                     </h4>
                                     <span className="font-mono text-[10px] text-white/35 uppercase tracking-wider block">
@@ -690,7 +650,7 @@ export default function About() {
                                   )}
                                 </div>
                               </div>
-                              <p className="text-xs text-white/60 leading-relaxed mb-3">
+                              <p className="text-xs sm:text-[13px] text-white/65 leading-relaxed mb-3">
                                 {group.description}
                               </p>
                               {/* Architecture Context in Focused State */}

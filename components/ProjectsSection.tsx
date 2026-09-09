@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
+import { motion, useReducedMotion, AnimatePresence, type Transition } from "framer-motion";
 import { projects, Project } from "@/data/projects";
 import LayeredHeading from "./LayeredHeading";
 import {
@@ -15,6 +15,8 @@ import {
   X,
   CheckCircle2,
   Maximize2,
+  Play,
+  Pause,
 } from "lucide-react";
 
 function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -390,6 +392,23 @@ function ProjectDetailModal({
 }
 
 /* ════════════════════════════════════════════════════════════
+   Project Accent Mapping: Glow & border accent per project
+   ════════════════════════════════════════════════════════════ */
+function getProjectAccent(project?: Project | null) {
+  if (!project) return { hex: "#dc2626", rgb: "220, 38, 38" };
+  if (project.id === "morsebridge-ventures") {
+    return { hex: "#dc2626", rgb: "220, 38, 38" };
+  }
+  if (project.id === "birdcast-studio") {
+    return { hex: "#0ea5e9", rgb: "14, 165, 233" };
+  }
+  if (project.id === "insighthub-ai" || project.category.includes("AI")) {
+    return { hex: "#8b5cf6", rgb: "139, 92, 246" };
+  }
+  return { hex: "#dc2626", rgb: "220, 38, 38" };
+}
+
+/* ════════════════════════════════════════════════════════════
    Main Projects Section — 3D Cascading Fanned Deck
    ════════════════════════════════════════════════════════════ */
 export default function ProjectsSection() {
@@ -399,6 +418,21 @@ export default function ProjectsSection() {
   const [isMobile, setIsMobile] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [modalProject, setModalProject] = useState<Project | null>(null);
+
+  // Transition & Animation states
+  const [direction, setDirection] = useState<number>(1); // 1 = next (card exits left), -1 = prev (card exits right)
+  const [exitingProject, setExitingProject] = useState<Project | null>(null);
+  const [exitKey, setExitKey] = useState(0);
+
+  // Autoplay states
+  const [isAutoplay, setIsAutoplay] = useState(false);
+  const [autoplayProgress, setAutoplayProgress] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Interaction refs
+  const isDraggingRef = useRef(false);
+  const isUserInteractingRef = useRef(false);
+  const resumeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const filteredProjects =
     selectedFilter === "All"
@@ -414,6 +448,10 @@ export default function ProjectsSection() {
           return p.category.toLowerCase().includes(selectedFilter.toLowerCase());
         });
 
+  const count = filteredProjects.length;
+  const activeProject = filteredProjects[activeIndex] || filteredProjects[0];
+  const activeAccent = getProjectAccent(activeProject);
+
   const liveCount = projects.filter((p) => p.liveUrl).length;
 
   useEffect(() => {
@@ -426,28 +464,162 @@ export default function ProjectsSection() {
   // Reset index when filter changes
   useEffect(() => {
     setActiveIndex(0);
+    setExitingProject(null);
+    setAutoplayProgress(0);
   }, [selectedFilter]);
 
-  const count = filteredProjects.length;
+  // Pause autoplay briefly on user interaction and resume after 3.5s
+  const pauseAutoplayBriefly = useCallback(() => {
+    isUserInteractingRef.current = true;
+    setAutoplayProgress(0);
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => {
+      isUserInteractingRef.current = false;
+    }, 3500);
+  }, []);
 
   const goToPrev = useCallback(() => {
+    if (count <= 1) return;
+    setDirection(-1);
+    setExitingProject(filteredProjects[activeIndex]);
+    setExitKey((k) => k + 1);
     setActiveIndex((prev) => (prev - 1 + count) % count);
-  }, [count]);
+    pauseAutoplayBriefly();
+  }, [count, activeIndex, filteredProjects, pauseAutoplayBriefly]);
 
   const goToNext = useCallback(() => {
+    if (count <= 1) return;
+    setDirection(1);
+    setExitingProject(filteredProjects[activeIndex]);
+    setExitKey((k) => k + 1);
     setActiveIndex((prev) => (prev + 1) % count);
-  }, [count]);
+    pauseAutoplayBriefly();
+  }, [count, activeIndex, filteredProjects, pauseAutoplayBriefly]);
 
-  // Keyboard navigation when user is on the section
+  const handleJumpTo = useCallback(
+    (targetIdx: number) => {
+      if (targetIdx === activeIndex || targetIdx < 0 || targetIdx >= count) return;
+      const diff = (targetIdx - activeIndex + count) % count;
+      const dir = diff <= count / 2 ? 1 : -1;
+      setDirection(dir);
+      setExitingProject(filteredProjects[activeIndex]);
+      setExitKey((k) => k + 1);
+      setActiveIndex(targetIdx);
+      pauseAutoplayBriefly();
+    },
+    [activeIndex, count, filteredProjects, pauseAutoplayBriefly]
+  );
+
+  const toggleAutoplay = () => {
+    if (shouldReduceMotion) return;
+    setIsAutoplay((prev) => !prev);
+    setAutoplayProgress(0);
+  };
+
+  // Autoplay Timer (4.5s per project, pauses on hover and during manual interaction)
+  useEffect(() => {
+    if (!isAutoplay || shouldReduceMotion || modalProject !== null || count <= 1) {
+      setAutoplayProgress(0);
+      return;
+    }
+
+    const INTERVAL_MS = 4500;
+    const STEP_MS = 50;
+    const increment = (STEP_MS / INTERVAL_MS) * 100;
+
+    const timer = setInterval(() => {
+      if (isHovered || isUserInteractingRef.current) {
+        return;
+      }
+
+      setAutoplayProgress((prev) => {
+        if (prev >= 100) {
+          goToNext();
+          return 0;
+        }
+        return prev + increment;
+      });
+    }, STEP_MS);
+
+    return () => clearInterval(timer);
+  }, [isAutoplay, shouldReduceMotion, modalProject, count, isHovered, goToNext]);
+
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (modalProject) return; // Don't navigate deck when modal is open
+      if (modalProject) return;
       if (e.key === "ArrowRight") goToNext();
       if (e.key === "ArrowLeft") goToPrev();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [goToNext, goToPrev, modalProject]);
+
+  // Layered Slot Styles (Front, 2nd, 3rd with distinct depth falloff & tilt)
+  const getSlotStyles = (slot: number) => {
+    const stepX = isMobile ? 32 : 80;
+    const stepY = isMobile ? -16 : -28;
+
+    if (slot === 0) {
+      return {
+        x: 0,
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        rotateZ: 0,
+        rotateY: -4,
+        rotateX: 2,
+        filter: "blur(0px) saturate(100%)",
+        zIndex: 30,
+      };
+    }
+    if (slot === 1) {
+      return {
+        x: stepX,
+        y: stepY,
+        scale: 0.95,
+        opacity: 0.6,
+        rotateZ: 2,
+        rotateY: -4,
+        rotateX: 2,
+        filter: "blur(2.5px) saturate(85%)",
+        zIndex: 20,
+      };
+    }
+    if (slot === 2) {
+      return {
+        x: stepX * 2,
+        y: stepY * 2,
+        scale: 0.9,
+        opacity: 0.35,
+        rotateZ: -3,
+        rotateY: -4,
+        rotateX: 2,
+        filter: "blur(5px) saturate(50%)",
+        zIndex: 10,
+      };
+    }
+    return {
+      x: stepX * 2 + 40,
+      y: stepY * 2 - 16,
+      scale: 0.85,
+      opacity: 0,
+      rotateZ: -4,
+      rotateY: -4,
+      rotateX: 2,
+      filter: "blur(6px) saturate(40%)",
+      zIndex: 0,
+    };
+  };
+
+  const springTransition: Transition = shouldReduceMotion
+    ? { duration: 0.25, ease: "easeInOut" }
+    : {
+        type: "spring",
+        stiffness: 260,
+        damping: 26,
+        mass: 0.85,
+      };
 
   return (
     <section id="projects" className="relative py-24 md:py-32 overflow-hidden">
@@ -506,79 +678,162 @@ export default function ProjectsSection() {
           <div className="relative w-full my-6">
             {/* 3D Perspective Stage */}
             <div
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
               className="relative mx-auto flex items-center justify-center pt-8 pb-16 min-h-[580px] sm:min-h-[640px]"
               style={{
                 perspective: "1400px",
                 transformStyle: "preserve-3d",
               }}
             >
-              {/* Cards Container */}
-              <div className="relative w-[340px] sm:w-[420px] lg:w-[480px] h-[520px] sm:h-[580px]">
+              {/* Soft Ambient Glow beneath front card that shifts color based on active project */}
+              <motion.div
+                animate={{
+                  backgroundColor: `rgba(${activeAccent.rgb}, 0.22)`,
+                  boxShadow: `0 30px 80px 25px rgba(${activeAccent.rgb}, 0.35)`,
+                }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+                className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[85%] max-w-[480px] h-20 rounded-full blur-3xl pointer-events-none -z-10"
+              />
+
+              {/* Cards Container with Smooth Re-Stacking on Filter Switch */}
+              <motion.div
+                key={selectedFilter}
+                initial={{ opacity: 0, scale: 0.96, y: 14 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: -14 }}
+                transition={springTransition}
+                className="relative w-[340px] sm:w-[420px] lg:w-[480px] h-[520px] sm:h-[580px]"
+                style={{ transformStyle: "preserve-3d" }}
+              >
+                {/* ── Exiting Front Card (slides out matching arrow direction) ── */}
+                <AnimatePresence>
+                  {exitingProject && (
+                    <motion.div
+                      key={`exiting-${exitingProject.id}-${exitKey}`}
+                      initial={{
+                        x: 0,
+                        y: 0,
+                        rotateZ: 0,
+                        rotateY: -4,
+                        rotateX: 2,
+                        scale: 1,
+                        opacity: 1,
+                        filter: "blur(0px) saturate(100%)",
+                      }}
+                      animate={{
+                        x: direction === 1 ? (isMobile ? -280 : -380) : isMobile ? 280 : 380,
+                        y: 16,
+                        rotateZ: direction === 1 ? -12 : 12,
+                        scale: 0.88,
+                        opacity: 0,
+                        filter: "blur(3px) saturate(80%)",
+                      }}
+                      exit={{ opacity: 0 }}
+                      transition={springTransition}
+                      onAnimationComplete={() => {
+                        setExitingProject(null);
+                      }}
+                      className="absolute inset-0 rounded-3xl overflow-hidden bg-[#0c0c12] border border-white/[0.14] pointer-events-none shadow-[20px_25px_50px_-10px_rgba(0,0,0,0.95)]"
+                      style={{
+                        zIndex: 40,
+                        transformStyle: "preserve-3d",
+                      }}
+                    >
+                      <ProjectCard
+                        project={exitingProject}
+                        isActive={true}
+                        onOpenModal={() => {}}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* ── Stacked Deck Cards ── */}
                 {filteredProjects.map((project, idx) => {
-                  // Slot calculation: 0 = front-left active, 1 = stepped right & up, 2 = further right & up
                   const slot = (idx - activeIndex + count) % count;
                   const isActive = slot === 0;
+                  const slotStyle = getSlotStyles(slot);
 
-                  // Stepped diagonal offsets matching the reference diagram
-                  const stepX = isMobile ? 32 : 80;
-                  const stepY = isMobile ? -16 : -28;
-
-                  const x = slot * stepX;
-                  const y = slot * stepY;
-                  const scale = 1 - slot * 0.04;
-                  const zIndex = 30 - slot * 10;
-                  const opacity = slot === 0 ? 1 : slot === 1 ? 0.92 : slot === 2 ? 0.8 : 0;
-
-                  if (slot > 2) return null;
+                  // Keep up to 3 slots visible, plus off-screen staging slot for smooth entrance
+                  if (slot > 3) return null;
 
                   return (
                     <motion.div
                       key={project.id}
                       animate={{
-                        x,
-                        y,
-                        scale,
-                        opacity,
-                        rotateY: -5,
-                        rotateX: 2,
+                        x: slotStyle.x,
+                        y: slotStyle.y,
+                        scale: slotStyle.scale,
+                        opacity: slotStyle.opacity,
+                        rotateZ: slotStyle.rotateZ,
+                        rotateY: slotStyle.rotateY,
+                        rotateX: slotStyle.rotateX,
+                        filter: slotStyle.filter,
                       }}
                       whileHover={
                         !isActive
                           ? {
-                              y: y - 14,
-                              x: x + 10,
-                              scale: scale * 1.02,
+                              y: slotStyle.y - 12,
+                              x: slotStyle.x + 8,
+                              scale: slotStyle.scale * 1.025,
+                              opacity: Math.min(slotStyle.opacity + 0.25, 0.95),
+                              filter: "blur(0px) saturate(100%)",
                               transition: { duration: 0.2 },
                             }
                           : undefined
                       }
-                      transition={{
-                        type: "spring",
-                        stiffness: 280,
-                        damping: 28,
-                        mass: 0.8,
+                      transition={springTransition}
+                      drag={isActive ? "x" : false}
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.35}
+                      onDragStart={() => {
+                        isDraggingRef.current = true;
+                      }}
+                      onDragEnd={(e, info) => {
+                        setTimeout(() => {
+                          isDraggingRef.current = false;
+                        }, 120);
+
+                        const threshold = 50;
+                        const velocityThreshold = 250;
+                        if (info.offset.x < -threshold || info.velocity.x < -velocityThreshold) {
+                          goToNext();
+                        } else if (info.offset.x > threshold || info.velocity.x > velocityThreshold) {
+                          goToPrev();
+                        }
                       }}
                       onClick={() => {
+                        if (isDraggingRef.current) return;
                         if (!isActive) {
-                          setActiveIndex(idx);
+                          handleJumpTo(idx);
                         } else {
                           setModalProject(project);
                         }
                       }}
                       className={`absolute inset-0 rounded-3xl overflow-hidden transition-colors duration-300 ${
                         isActive
-                          ? "bg-[#0c0c12] border border-white/[0.14] shadow-[20px_25px_50px_-10px_rgba(0,0,0,0.9),0_0_30px_rgba(220,38,38,0.2)] cursor-pointer"
-                          : "bg-[#0a0a0f] border border-white/[0.08] shadow-[20px_25px_40px_-10px_rgba(0,0,0,0.8)] cursor-pointer hover:border-white/25"
+                          ? "bg-[#0c0c12] border border-white/[0.14] cursor-grab active:cursor-grabbing shadow-[20px_25px_50px_-10px_rgba(0,0,0,0.95)]"
+                          : "bg-[#0a0a0f] border border-white/[0.08] cursor-pointer hover:border-white/30 shadow-[20px_25px_40px_-10px_rgba(0,0,0,0.85)]"
                       }`}
                       style={{
-                        zIndex,
+                        zIndex: slotStyle.zIndex,
                         transformStyle: "preserve-3d",
-                        pointerEvents: "auto",
+                        pointerEvents: slot <= 2 ? "auto" : "none",
+                        boxShadow: isActive
+                          ? `20px 25px 50px -10px rgba(0,0,0,0.95), 0 0 35px rgba(${activeAccent.rgb}, 0.25)`
+                          : "20px 25px 40px -10px rgba(0,0,0,0.85)",
                       }}
                     >
-                      {/* Active Card Top Accent Glow */}
+                      {/* Active Front Card Top Accent Glow matching project identity */}
                       {isActive && (
-                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#dc2626] to-transparent z-10" />
+                        <motion.div
+                          animate={{
+                            background: `linear-gradient(90deg, transparent, ${activeAccent.hex}, transparent)`,
+                          }}
+                          transition={{ duration: 0.5 }}
+                          className="absolute top-0 left-0 right-0 h-[2px] z-10 pointer-events-none"
+                        />
                       )}
 
                       <ProjectCard
@@ -589,32 +844,71 @@ export default function ProjectsSection() {
                     </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
 
-              {/* ─── Yellow Arrow Navigation (from reference diagram) ─── */}
-              <div className="absolute right-0 sm:right-6 lg:right-12 bottom-0 z-40 flex items-center gap-3">
-                {/* Previous Button */}
-                <button
-                  onClick={goToPrev}
-                  className="p-3 rounded-2xl glass hover:bg-white/[0.1] text-white/60 hover:text-white border border-white/10 hover:border-white/25 transition-all duration-300 active:scale-95 shadow-lg cursor-pointer"
-                  aria-label="Previous project"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-
-                {/* Iconic Chunky Yellow Arrow from diagram */}
-                <button
-                  onClick={goToNext}
-                  className="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f59e0b] to-[#d97706] text-black shadow-[0_0_25px_rgba(245,158,11,0.55)] hover:shadow-[0_0_35px_rgba(245,158,11,0.85)] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
-                  aria-label="Next project"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="w-7 h-7 fill-black transition-transform duration-300 group-hover:translate-x-0.5"
+              {/* ─── Deck Controls: Prev, Autoplay Toggle, Next + Progress Bar ─── */}
+              <div className="absolute right-0 sm:right-6 lg:right-12 bottom-0 z-40 flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2 p-1.5 rounded-2xl glass-strong border border-white/10 shadow-2xl backdrop-blur-xl">
+                  {/* Previous Button */}
+                  <button
+                    onClick={goToPrev}
+                    className="p-3 rounded-xl glass hover:bg-white/[0.12] text-white/70 hover:text-white border border-white/10 hover:border-white/25 transition-all duration-300 active:scale-95 shadow-md cursor-pointer"
+                    aria-label="Previous project"
+                    title="Previous project (Left arrow)"
                   >
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </button>
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  {/* Autoplay Toggle Button */}
+                  <button
+                    onClick={toggleAutoplay}
+                    className={`relative px-3.5 py-2.5 rounded-xl text-xs font-mono font-semibold flex items-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer ${
+                      isAutoplay
+                        ? "bg-[#dc2626]/20 text-[#dc2626] border border-[#dc2626]/40 shadow-[0_0_16px_rgba(220,38,38,0.3)]"
+                        : "glass text-white/50 hover:text-white border border-white/10"
+                    }`}
+                    aria-label={isAutoplay ? "Pause autoplay" : "Start autoplay"}
+                    title={isAutoplay ? "Pause autoplay" : "Enable autoplay (4.5s loop)"}
+                  >
+                    {isAutoplay ? (
+                      <>
+                        <Pause className="w-4 h-4 text-[#dc2626]" />
+                        <span className="hidden sm:inline">Auto</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 text-white/70" />
+                        <span className="hidden sm:inline">Auto</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Next Button */}
+                  <button
+                    onClick={goToNext}
+                    className="group relative flex items-center justify-center p-3 rounded-xl bg-gradient-to-br from-[#dc2626] to-[#b91c1c] text-white shadow-[0_0_20px_rgba(220,38,38,0.45)] hover:shadow-[0_0_30px_rgba(220,38,38,0.7)] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+                    aria-label="Next project"
+                    title="Next project (Right arrow)"
+                  >
+                    <ChevronRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                  </button>
+                </div>
+
+                {/* Autoplay Progress Bar */}
+                {isAutoplay && !shouldReduceMotion && (
+                  <div className="w-full max-w-[190px] px-1">
+                    <div className="flex items-center justify-between text-[9px] font-mono text-white/40 mb-1 px-1">
+                      <span>{isHovered ? "PAUSED (HOVER)" : "NEXT IN 4.5S"}</span>
+                      <span>{Math.round(autoplayProgress)}%</span>
+                    </div>
+                    <div className="h-1 w-full bg-white/[0.08] rounded-full overflow-hidden border border-white/[0.06]">
+                      <div
+                        className="h-full bg-gradient-to-r from-[#dc2626] to-[#f59e0b] rounded-full transition-all duration-75"
+                        style={{ width: `${autoplayProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -625,7 +919,7 @@ export default function ProjectsSection() {
                 {filteredProjects.map((p, i) => (
                   <button
                     key={p.id}
-                    onClick={() => setActiveIndex(i)}
+                    onClick={() => handleJumpTo(i)}
                     className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-mono transition-all duration-300 cursor-pointer ${
                       i === activeIndex
                         ? "bg-white/[0.1] text-white border border-[#dc2626]/40 shadow-[0_0_12px_rgba(220,38,38,0.2)]"
@@ -645,7 +939,7 @@ export default function ProjectsSection() {
               {/* Counter & Hint */}
               <div className="flex items-center gap-3">
                 <span className="text-[11px] font-mono text-white/35 hidden md:inline">
-                  Click front card to view full details
+                  Drag / Swipe or click back cards to skip
                 </span>
                 <span className="font-mono text-xs text-white/30 glass px-3 py-1 rounded-lg">
                   <span className="text-white font-bold">{activeIndex + 1}</span>
