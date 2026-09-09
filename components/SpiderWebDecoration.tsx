@@ -55,18 +55,6 @@ export default function SpiderWebDecoration() {
           <svg width="2" height="200" viewBox="0 0 2 200" fill="none">
             <line x1="1" y1="0" x2="1" y2="200" stroke="#dc2626" strokeWidth="1" strokeDasharray="4 8" />
           </svg>
-          {/* Tiny spider silhouette */}
-          <svg width="16" height="18" viewBox="0 0 16 18" fill="none" className="mx-auto -mt-1">
-            <ellipse cx="8" cy="6" rx="4" ry="3.5" fill="#dc2626" />
-            <ellipse cx="8" cy="13" rx="5" ry="5" fill="#dc2626" />
-            {/* Legs */}
-            <line x1="3" y1="8" x2="0" y2="4" stroke="#dc2626" strokeWidth="0.8" />
-            <line x1="13" y1="8" x2="16" y2="4" stroke="#dc2626" strokeWidth="0.8" />
-            <line x1="3" y1="11" x2="0" y2="14" stroke="#dc2626" strokeWidth="0.8" />
-            <line x1="13" y1="11" x2="16" y2="14" stroke="#dc2626" strokeWidth="0.8" />
-            <line x1="3" y1="13" x2="0" y2="18" stroke="#dc2626" strokeWidth="0.8" />
-            <line x1="13" y1="13" x2="16" y2="18" stroke="#dc2626" strokeWidth="0.8" />
-          </svg>
         </div>
       </div>
     </>
