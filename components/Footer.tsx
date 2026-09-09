@@ -24,7 +24,7 @@ export default function Footer() {
         </svg>
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20">
         {/* Large Footer Watermark */}
         <div
           aria-hidden="true"
@@ -34,7 +34,7 @@ export default function Footer() {
           BHAVYA BANSAL
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-white/[0.06] text-xs font-mono text-white/25">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 pt-6 border-t border-white/[0.06] text-xs font-mono text-white/25 text-center sm:text-left">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#dc2626] shadow-[0_0_6px_rgba(220,38,38,0.4)]" />
             <span>© {new Date().getFullYear()} Bhavya Bansal. All rights reserved.</span>

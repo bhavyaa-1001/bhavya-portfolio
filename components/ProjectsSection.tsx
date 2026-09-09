@@ -46,7 +46,7 @@ function ProjectCard({
   }
 
   return (
-    <div className="w-full h-full flex flex-col justify-between p-5 sm:p-6 select-none bg-[#0c0c12] rounded-3xl">
+    <div className="w-full h-full flex flex-col justify-between p-4 sm:p-6 select-none bg-[#0c0c12] rounded-3xl">
       {/* ─── Top Header & Badges ─── */}
       <div>
         <div className="flex items-center justify-between gap-2 mb-3 pb-2.5 border-b border-white/[0.08]">
@@ -457,12 +457,6 @@ export default function ProjectsSection() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Reset index when filter changes
-  useEffect(() => {
-    setActiveIndex(0);
-    setExitingProject(null);
-  }, [selectedFilter]);
-
   // Pause auto-sliding briefly on user interaction and resume after 3.5s
   const pauseAutoplayBriefly = useCallback(() => {
     isUserInteractingRef.current = true;
@@ -533,8 +527,8 @@ export default function ProjectsSection() {
 
   // Layered Slot Styles (Front, 2nd, 3rd with distinct depth falloff & tilt)
   const getSlotStyles = (slot: number) => {
-    const stepX = isMobile ? 32 : 80;
-    const stepY = isMobile ? -16 : -28;
+    const stepX = isMobile ? 14 : 80;
+    const stepY = isMobile ? -14 : -28;
 
     if (slot === 0) {
       return {
@@ -603,7 +597,7 @@ export default function ProjectsSection() {
       <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-[#dc2626]/[0.03] blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 left-0 w-[450px] h-[450px] rounded-full bg-[#f59e0b]/[0.02] blur-[100px] pointer-events-none" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20">
         <LayeredHeading subtitle="Featured Work" title="Featured Projects" watermark="PROJECTS" />
 
         {/* ─── Filter Bar ─── */}
@@ -612,7 +606,11 @@ export default function ProjectsSection() {
             {filterCategories.map((filter) => (
               <button
                 key={filter}
-                onClick={() => setSelectedFilter(filter)}
+                onClick={() => {
+                  setSelectedFilter(filter);
+                  setActiveIndex(0);
+                  setExitingProject(null);
+                }}
                 className={`px-4 py-1.5 rounded-full text-xs font-mono transition-all duration-200 ${
                   selectedFilter === filter
                     ? "bg-[#dc2626] text-white font-semibold shadow-[0_0_12px_rgba(220,38,38,0.3)]"
@@ -679,7 +677,7 @@ export default function ProjectsSection() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96, y: -14 }}
                 transition={springTransition}
-                className="relative w-[340px] sm:w-[420px] lg:w-[480px] h-[520px] sm:h-[580px]"
+                className="relative w-[calc(100vw-64px)] max-w-[320px] sm:max-w-[420px] lg:max-w-[480px] h-[500px] sm:h-[580px]"
                 style={{ transformStyle: "preserve-3d" }}
               >
                 {/* ── Exiting Front Card (slides out matching arrow direction) ── */}
@@ -698,7 +696,7 @@ export default function ProjectsSection() {
                         filter: "blur(0px) saturate(100%)",
                       }}
                       animate={{
-                        x: direction === 1 ? (isMobile ? -280 : -380) : isMobile ? 280 : 380,
+                        x: direction === 1 ? (isMobile ? -220 : -380) : isMobile ? 220 : 380,
                         y: 16,
                         rotateZ: direction === 1 ? -12 : 12,
                         scale: 0.88,

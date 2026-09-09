@@ -97,15 +97,15 @@ export default function SidebarNav() {
 
       {/* Mobile Floating Pill */}
       <header className="lg:hidden fixed top-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-        <nav className="pointer-events-auto flex items-center gap-1.5 px-3 py-2 rounded-full glass-strong shadow-lg shadow-black/30">
+        <nav className="pointer-events-auto flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-full glass-strong shadow-lg shadow-black/30 max-w-[calc(100vw-32px)] overflow-x-auto">
           <a
             href="#hero"
             onClick={(e) => scrollToSection(e, "#hero")}
-            className="px-2 py-1 rounded-full text-xs font-mono font-bold text-white hover:text-[#dc2626] transition-colors"
+            className="px-2 py-1 rounded-full text-xs font-mono font-bold text-white hover:text-[#dc2626] transition-colors whitespace-nowrap"
           >
             BB
           </a>
-          <span className="w-px h-3.5 bg-white/10" />
+          <span className="w-px h-3.5 bg-white/10 shrink-0" />
           {navItems.filter(i => i.id !== "hero").map((item) => {
             const isActive = activeSection === item.id;
             return (
@@ -113,7 +113,7 @@ export default function SidebarNav() {
                 key={item.id}
                 href={item.href}
                 onClick={(e) => scrollToSection(e, item.href)}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider transition-all duration-200 ${
+                className={`px-2 sm:px-2.5 py-1 rounded-full text-[10px] sm:text-[11px] font-mono uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
                   isActive
                     ? "bg-[#dc2626] text-white font-semibold shadow-[0_0_10px_rgba(220,38,38,0.3)]"
                     : "text-white/40 hover:text-white/70"

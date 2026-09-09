@@ -37,7 +37,7 @@ export default function Hero() {
     <section
       id="hero"
       ref={containerRef}
-      className="relative h-screen min-h-[600px] max-h-[1200px] w-full overflow-hidden bg-[#0a0a0a]"
+      className="relative min-h-[100dvh] w-full overflow-hidden bg-[#0a0a0a] flex items-center"
     >
       {/* Full-Bleed Portrait Background with Refined Framing */}
       <div
@@ -127,8 +127,8 @@ export default function Hero() {
 
 
       {/* Glassmorphism Content Card */}
-      <div className="absolute inset-0 z-10 flex items-center">
-        <div className="w-full max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
+      <div className="relative lg:absolute inset-0 z-10 flex items-center py-24 lg:py-0">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <motion.div
               initial={shouldReduceMotion ? false : { opacity: 0, x: -30, y: 10 }}
@@ -136,7 +136,7 @@ export default function Hero() {
               transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="lg:col-span-5 xl:col-span-5"
             >
-              <div className="relative p-7 sm:p-9 rounded-2xl glass-strong glow-red">
+              <div className="relative p-5 sm:p-7 md:p-9 rounded-2xl glass-strong glow-red">
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#dc2626]/[0.06] via-transparent to-[#2563eb]/[0.04] pointer-events-none" />
                 <div className="relative z-10">
                   <div className="flex items-center gap-2 mb-6">
@@ -184,8 +184,8 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Bottom Right: Impact Statement */}
-      <div className="absolute bottom-14 sm:bottom-16 right-6 md:right-12 lg:right-20 z-10 text-right">
+      {/* Bottom Right: Impact Statement (visible on tablet/desktop) */}
+      <div className="hidden md:block absolute bottom-14 sm:bottom-16 right-6 md:right-12 lg:right-20 z-10 text-right">
         <motion.p
           initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

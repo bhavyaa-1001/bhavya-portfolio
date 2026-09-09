@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { experiences } from "@/data/experience";
 import LayeredHeading from "./LayeredHeading";
@@ -10,15 +10,7 @@ export default function ExperienceSection() {
   const shouldReduceMotion = useReducedMotion();
   const timelineLineRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Responsive check
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 1024);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
 
   // GSAP timeline line draw
   useEffect(() => {
@@ -71,7 +63,7 @@ export default function ExperienceSection() {
       {/* Section glow accent */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full bg-[#2563eb]/[0.03] blur-[120px] pointer-events-none" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20">
         <LayeredHeading
           subtitle="Career & Impact"
           title="Experience & Roles"
@@ -81,7 +73,7 @@ export default function ExperienceSection() {
         {/* Timeline Container */}
         <div ref={sectionRef} className="relative mt-12 md:mt-16">
           {/* Vertical Timeline Line */}
-          <div className="absolute left-6 lg:left-1/2 top-0 bottom-0 w-[2px] lg:-translate-x-[1px]">
+          <div className="absolute left-4 sm:left-6 lg:left-1/2 top-0 bottom-0 w-[2px] lg:-translate-x-[1px]">
             {/* Background track */}
             <div className="absolute inset-0 bg-white/[0.06] rounded-full" />
             {/* Animated fill */}
@@ -110,7 +102,7 @@ export default function ExperienceSection() {
                 >
                   {/* Timeline Dot */}
                   <div
-                    className={`absolute left-6 lg:left-1/2 top-8 lg:top-10 z-20 -translate-x-1/2`}
+                    className={`absolute left-4 sm:left-6 lg:left-1/2 top-8 lg:top-10 z-20 -translate-x-1/2`}
                   >
                     {/* Outer glow ring for current role */}
                     {isCurrent && (
@@ -158,7 +150,7 @@ export default function ExperienceSection() {
                       ease: [0.16, 1, 0.3, 1],
                     }}
                     whileHover={{ y: -4, scale: 1.01 }}
-                    className={`group relative ml-14 lg:ml-0 w-full lg:w-[calc(50%-40px)] perspective-1000 ${
+                    className={`group relative ml-8 sm:ml-12 lg:ml-0 w-full lg:w-[calc(50%-40px)] perspective-1000 ${
                       isEven ? "lg:pr-8" : "lg:pl-8"
                     }`}
                     style={{ transformStyle: "preserve-3d" }}
@@ -176,7 +168,7 @@ export default function ExperienceSection() {
 
                     {/* Main Experience Glass Card */}
                     <div
-                      className={`p-6 sm:p-8 md:p-10 rounded-2xl glass-strong hover:bg-white/[0.07] transition-all duration-300 ${
+                      className={`p-4 sm:p-7 md:p-10 rounded-2xl glass-strong hover:bg-white/[0.07] transition-all duration-300 ${
                         idx === 0 ? "glow-red" : idx === 1 ? "glow-blue" : ""
                       }`}
                     >

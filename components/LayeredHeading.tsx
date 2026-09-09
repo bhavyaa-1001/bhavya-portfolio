@@ -13,7 +13,6 @@ interface LayeredHeadingProps {
 }
 
 export default function LayeredHeading({
-  number,
   title,
   watermark,
   subtitle,

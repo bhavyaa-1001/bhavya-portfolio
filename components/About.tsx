@@ -50,7 +50,6 @@ export default function About() {
   // Detail modal state
   const [selectedCategory, setSelectedCategory] = useState<SkillCategory | null>(null);
 
-  const NUM_CARDS = skillCategories.length; // 6
   const ORBIT_RADIUS = 350; // 3D cylinder radius in px
 
   // Grid Dimensions
@@ -86,24 +85,15 @@ export default function About() {
     return icons[category.toLowerCase()] ?? <Terminal className="w-4 h-4 text-[#dc2626]" />;
   };
 
-  // Mobile breakpoint check: default to Grid View on < 768px
+  // Mobile breakpoint check (< 768px)
   useEffect(() => {
     const check = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) setViewMode("grid");
+      setIsMobile(window.innerWidth < 768);
     };
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
-
-  // Respect reduced motion: default to Grid View
-  useEffect(() => {
-    if (shouldReduceMotion) {
-      setViewMode("grid");
-    }
-  }, [shouldReduceMotion]);
 
   // Keyboard escape listener for modal / focus
   useEffect(() => {
@@ -828,7 +818,7 @@ export default function About() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="relative w-full max-w-xl p-6 sm:p-8 rounded-3xl bg-[#0e0e16] border border-white/[0.15] shadow-[0_25px_60px_rgba(0,0,0,0.85)] text-left"
+              className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto p-5 sm:p-8 rounded-3xl bg-[#0e0e16] border border-white/[0.15] shadow-[0_25px_60px_rgba(0,0,0,0.85)] text-left"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal header */}

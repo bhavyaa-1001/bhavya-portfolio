@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import LayeredHeading from "./LayeredHeading";
-import { Mail, Send, MapPin, CheckCircle2, AlertCircle, ArrowUpRight, Sparkles } from "lucide-react";
+import { Mail, Send, MapPin, CheckCircle2, AlertCircle, ArrowUpRight } from "lucide-react";
 import confetti from "canvas-confetti";
 
 function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
