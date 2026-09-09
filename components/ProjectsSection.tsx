@@ -15,8 +15,6 @@ import {
   X,
   CheckCircle2,
   Maximize2,
-  Play,
-  Pause,
 } from "lucide-react";
 
 function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -424,9 +422,7 @@ export default function ProjectsSection() {
   const [exitingProject, setExitingProject] = useState<Project | null>(null);
   const [exitKey, setExitKey] = useState(0);
 
-  // Autoplay states
-  const [isAutoplay, setIsAutoplay] = useState(false);
-  const [autoplayProgress, setAutoplayProgress] = useState(0);
+  // Hover & interaction states for automatic slide changing
   const [isHovered, setIsHovered] = useState(false);
 
   // Interaction refs
@@ -465,13 +461,11 @@ export default function ProjectsSection() {
   useEffect(() => {
     setActiveIndex(0);
     setExitingProject(null);
-    setAutoplayProgress(0);
   }, [selectedFilter]);
 
-  // Pause autoplay briefly on user interaction and resume after 3.5s
+  // Pause auto-sliding briefly on user interaction and resume after 3.5s
   const pauseAutoplayBriefly = useCallback(() => {
     isUserInteractingRef.current = true;
-    setAutoplayProgress(0);
     if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
     resumeTimerRef.current = setTimeout(() => {
       isUserInteractingRef.current = false;
@@ -510,39 +504,21 @@ export default function ProjectsSection() {
     [activeIndex, count, filteredProjects, pauseAutoplayBriefly]
   );
 
-  const toggleAutoplay = () => {
-    if (shouldReduceMotion) return;
-    setIsAutoplay((prev) => !prev);
-    setAutoplayProgress(0);
-  };
-
-  // Autoplay Timer (4.5s per project, pauses on hover and during manual interaction)
+  // Automatically advance every 5 seconds (pauses on hover and during manual interaction)
   useEffect(() => {
-    if (!isAutoplay || shouldReduceMotion || modalProject !== null || count <= 1) {
-      setAutoplayProgress(0);
+    if (shouldReduceMotion || modalProject !== null || count <= 1) {
       return;
     }
-
-    const INTERVAL_MS = 4500;
-    const STEP_MS = 50;
-    const increment = (STEP_MS / INTERVAL_MS) * 100;
 
     const timer = setInterval(() => {
       if (isHovered || isUserInteractingRef.current) {
         return;
       }
-
-      setAutoplayProgress((prev) => {
-        if (prev >= 100) {
-          goToNext();
-          return 0;
-        }
-        return prev + increment;
-      });
-    }, STEP_MS);
+      goToNext();
+    }, 5000);
 
     return () => clearInterval(timer);
-  }, [isAutoplay, shouldReduceMotion, modalProject, count, isHovered, goToNext]);
+  }, [shouldReduceMotion, modalProject, count, isHovered, goToNext]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -859,30 +835,6 @@ export default function ProjectsSection() {
                     <ChevronLeft className="w-5 h-5" />
                   </button>
 
-                  {/* Autoplay Toggle Button */}
-                  <button
-                    onClick={toggleAutoplay}
-                    className={`relative px-3.5 py-2.5 rounded-xl text-xs font-mono font-semibold flex items-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer ${
-                      isAutoplay
-                        ? "bg-[#dc2626]/20 text-[#dc2626] border border-[#dc2626]/40 shadow-[0_0_16px_rgba(220,38,38,0.3)]"
-                        : "glass text-white/50 hover:text-white border border-white/10"
-                    }`}
-                    aria-label={isAutoplay ? "Pause autoplay" : "Start autoplay"}
-                    title={isAutoplay ? "Pause autoplay" : "Enable autoplay (4.5s loop)"}
-                  >
-                    {isAutoplay ? (
-                      <>
-                        <Pause className="w-4 h-4 text-[#dc2626]" />
-                        <span className="hidden sm:inline">Auto</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 text-white/70" />
-                        <span className="hidden sm:inline">Auto</span>
-                      </>
-                    )}
-                  </button>
-
                   {/* Next Button */}
                   <button
                     onClick={goToNext}
@@ -893,22 +845,6 @@ export default function ProjectsSection() {
                     <ChevronRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-0.5" />
                   </button>
                 </div>
-
-                {/* Autoplay Progress Bar */}
-                {isAutoplay && !shouldReduceMotion && (
-                  <div className="w-full max-w-[190px] px-1">
-                    <div className="flex items-center justify-between text-[9px] font-mono text-white/40 mb-1 px-1">
-                      <span>{isHovered ? "PAUSED (HOVER)" : "NEXT IN 4.5S"}</span>
-                      <span>{Math.round(autoplayProgress)}%</span>
-                    </div>
-                    <div className="h-1 w-full bg-white/[0.08] rounded-full overflow-hidden border border-white/[0.06]">
-                      <div
-                        className="h-full bg-gradient-to-r from-[#dc2626] to-[#f59e0b] rounded-full transition-all duration-75"
-                        style={{ width: `${autoplayProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
